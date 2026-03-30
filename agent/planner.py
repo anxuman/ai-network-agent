@@ -1,59 +1,49 @@
-from openai import OpenAI
+from config import client, MODEL
 import json
 import re
-from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, MODEL_NAME
-
-# Initialize client
-client = OpenAI(
-    base_url=NVIDIA_BASE_URL,
-    api_key=NVIDIA_API_KEY
-)
-
-def extract_json(text):
-    """Extract JSON from LLM response safely"""
-    match = re.search(r"\{.*\}", text, re.DOTALL)
-    if match:
-        return json.loads(match.group())
-    return None
-
 
 def create_plan(user_input):
+
     prompt = f"""
-    Convert the user request into STRICT JSON.
+You are an expert network engineer.
 
-    Example:
-    Input: Check router R1
-    Output:
-    {{
-      "device": "R1",
-      "commands": ["show ip interface brief"]
-    }}
+Create a troubleshooting plan based on the issue.
 
-    Rules:
-    - Respond ONLY in JSON
-    - No explanation
-    - Always include device and commands
+IMPORTANT:
+- Use REALISTIC IPs, interfaces, and commands based on the problem
+- Do NOT always use same commands
+- Adapt to the issue
 
-    User Input: {user_input}
-    """
+User Issue:
+{user_input}
+
+Return ONLY JSON:
+[
+  {{"step": 1, "action": "..."}}
+]
+"""
 
     try:
-        completion = client.chat.completions.create(
-            model=MODEL_NAME,
+        response = client.chat.completions.create(
+            model=MODEL,
             messages=[{"role": "user", "content": prompt}],
-            temperature=0.3
+            temperature=0.2,
         )
 
-        response_text = completion.choices[0].message.content
+        result = response.choices[0].message.content
 
-        print("LLM RAW RESPONSE:", response_text)  # debug
+        # 🔍 DEBUG (IMPORTANT)
+        print("RAW LLM OUTPUT:\n", result)
 
-        plan = extract_json(response_text)
+        # 🧠 Extract JSON using regex
+        json_match = re.search(r"\[.*\]", result, re.DOTALL)
 
-        if not plan:
-            return "Error: Could not parse JSON from LLM"
+        if not json_match:
+            return "Planner Error: No JSON found in response"
 
-        return plan
+        json_text = json_match.group(0)
+
+        return json.loads(json_text)
 
     except Exception as e:
-        return f"LLM Error: {str(e)}"
+        return f"Planner Error: {str(e)}"
