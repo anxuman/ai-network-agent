@@ -1,29 +1,33 @@
-import requests
-from config import GLM_API_KEY
+from openai import OpenAI
+from config import NVIDIA_API_KEY, NVIDIA_BASE_URL, MODEL_NAME
+
+# Initialize client
+client = OpenAI(
+    base_url=NVIDIA_BASE_URL,
+    api_key=NVIDIA_API_KEY
+)
 
 def analyze_output(raw_output):
-    url = "https://open.bigmodel.cn/api/paas/v4/chat/completions"
-
-    headers = {
-        "Authorization": f"Bearer {GLM_API_KEY}",
-        "Content-Type": "application/json"
-    }
-
     prompt = f"""
-    Analyze the following network output and explain the issue:
+    You are a network engineer.
 
+    Analyze the following CLI output and explain:
+    - What is the issue
+    - Possible cause
+    - Suggested fix
+
+    Output:
     {raw_output}
     """
 
-    data = {
-        "model": "glm-5-turbo",
-        "messages": [
-            {"role": "user", "content": prompt}
-        ]
-    }
+    try:
+        completion = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.5
+        )
 
-    response = requests.post(url, headers=headers, json=data)
+        return completion.choices[0].message.content
 
-    result = response.json()
-    print(result)
-    return result["choices"][0]["message"]["content"]
+    except Exception as e:
+        return f"LLM Error: {str(e)}"

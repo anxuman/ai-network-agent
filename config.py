@@ -1,3 +1,13 @@
+# config.py
+
+# 🔹 NVIDIA API CONFIG
+NVIDIA_API_KEY = "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"
+
+NVIDIA_BASE_URL = "https://integrate.api.nvidia.com/v1"
+MODEL_NAME = "deepseek-ai/deepseek-r1"
+
+
+# 🔹 NETWORK DEVICES
 DEVICES = {
     "R1": {
         "device_type": "cisco_ios",
@@ -6,5 +16,3 @@ DEVICES = {
         "password": "admin"
     }
 }
-
-GLM_API_KEY = "942438ca130a4c3ba94e2ef9f82d184f.cRHsznkRfT1FMesF"
